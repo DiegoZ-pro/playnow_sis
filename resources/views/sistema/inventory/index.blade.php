@@ -97,21 +97,29 @@
                     @forelse($products as $product)
                     <tr class="hover:bg-gray-50">
                         <td class="px-6 py-4">
-                            <div class="flex items-center">
-                                <div class="flex-shrink-0 h-10 w-10">
-                                    @if($product->images->first())
-                                    <img class="h-10 w-10 rounded object-cover" 
-                                         src="{{ asset('storage/' . $product->images->first()->path) }}" 
-                                         alt="{{ $product->name }}">
+                            <div class="flex items-center gap-3">
+                                {{-- IMAGEN --}}
+                                <div class="flex-shrink-0 w-12 h-12 bg-gray-100 rounded overflow-hidden">
+                                    @php
+                                        $primaryImage = $product->images->where('is_primary', true)->first() 
+                                                        ?? $product->images->first();
+                                    @endphp
+
+                                    @if($primaryImage)
+                                        <img src="{{ asset('storage/' . $primaryImage->image_url) }}" 
+                                            alt="{{ $product->name }}"
+                                            class="w-full h-full object-cover">
                                     @else
-                                    <div class="h-10 w-10 rounded bg-gray-200 flex items-center justify-center">
-                                        <i class="fas fa-image text-gray-400"></i>
-                                    </div>
+                                        <div class="w-full h-full flex items-center justify-center bg-gray-200">
+                                            <i class="fas fa-image text-gray-400 text-xl"></i>
+                                        </div>
                                     @endif
                                 </div>
-                                <div class="ml-4">
-                                    <div class="text-sm font-medium text-gray-900">{{ $product->name }}</div>
-                                    <div class="text-sm text-gray-500">{{ $product->slug }}</div>
+
+                                {{-- NOMBRE Y SLUG --}}
+                                <div class="min-w-0">
+                                    <p class="font-medium text-gray-900 truncate">{{ $product->name }}</p>
+                                    <p class="text-sm text-gray-500 truncate">{{ $product->slug }}</p>
                                 </div>
                             </div>
                         </td>
@@ -141,19 +149,25 @@
                         <td class="px-6 py-4 whitespace-nowrap text-sm font-medium">
                             <div class="flex gap-2">
                                 <a href="{{ route('sistema.inventory.show', $product->id) }}" 
-                                   class="text-blue-600 hover:text-blue-900">
+                                   class="text-blue-600 hover:text-blue-900"
+                                   title="Ver detalles">
                                     <i class="fas fa-eye"></i>
                                 </a>
                                 <a href="{{ route('sistema.inventory.edit', $product->id) }}" 
-                                   class="text-green-600 hover:text-green-900">
+                                   class="text-green-600 hover:text-green-900"
+                                   title="Editar">
                                     <i class="fas fa-edit"></i>
                                 </a>
                                 <form method="POST" 
                                       action="{{ route('sistema.inventory.destroy', $product->id) }}"
-                                      onsubmit="return confirm('¿Estás seguro de desactivar este producto?')">
+                                      class="inline"
+                                      id="delete-form-{{ $product->id }}">
                                     @csrf
                                     @method('DELETE')
-                                    <button type="submit" class="text-red-600 hover:text-red-900">
+                                    <button type="button" 
+                                            onclick="confirmDelete({{ $product->id }}, '{{ addslashes($product->name) }}')"
+                                            class="text-red-600 hover:text-red-900"
+                                            title="Eliminar">
                                         <i class="fas fa-trash"></i>
                                     </button>
                                 </form>
@@ -180,4 +194,69 @@
         @endif
     </div>
 </div>
+
+<!-- Modal de Confirmación (Bootstrap/Tailwind Style) -->
+<div id="deleteModal" class="fixed inset-0 bg-gray-600 bg-opacity-50 hidden overflow-y-auto h-full w-full z-50">
+    <div class="relative top-20 mx-auto p-5 border w-96 shadow-lg rounded-md bg-white">
+        <div class="mt-3 text-center">
+            <div class="mx-auto flex items-center justify-center h-12 w-12 rounded-full bg-red-100">
+                <i class="fas fa-exclamation-triangle text-red-600 text-xl"></i>
+            </div>
+            <h3 class="text-lg leading-6 font-medium text-gray-900 mt-4">¿Eliminar producto?</h3>
+            <div class="mt-2 px-7 py-3">
+                <p class="text-sm text-gray-500">
+                    ¿Estás seguro de eliminar <strong id="productName"></strong>?
+                </p>
+                <p class="text-xs text-gray-400 mt-2">Esta acción no se puede deshacer</p>
+            </div>
+            <div class="flex gap-3 px-4 py-3">
+                <button onclick="closeModal()" 
+                        class="flex-1 px-4 py-2 bg-gray-200 text-gray-700 rounded-lg hover:bg-gray-300">
+                    Cancelar
+                </button>
+                <button onclick="submitDelete()" 
+                        class="flex-1 px-4 py-2 bg-red-600 text-white rounded-lg hover:bg-red-700">
+                    <i class="fas fa-trash mr-2"></i>Sí, eliminar
+                </button>
+            </div>
+        </div>
+    </div>
+</div>
 @endsection
+
+@push('scripts')
+<script>
+let deleteFormId = null;
+
+function confirmDelete(productId, productName) {
+    deleteFormId = productId;
+    document.getElementById('productName').textContent = productName;
+    document.getElementById('deleteModal').classList.remove('hidden');
+}
+
+function closeModal() {
+    document.getElementById('deleteModal').classList.add('hidden');
+    deleteFormId = null;
+}
+
+function submitDelete() {
+    if (deleteFormId) {
+        document.getElementById('delete-form-' + deleteFormId).submit();
+    }
+}
+
+// Cerrar modal con ESC
+document.addEventListener('keydown', function(event) {
+    if (event.key === 'Escape') {
+        closeModal();
+    }
+});
+
+// Cerrar modal al hacer clic fuera
+document.getElementById('deleteModal').addEventListener('click', function(event) {
+    if (event.target === this) {
+        closeModal();
+    }
+});
+</script>
+@endpush

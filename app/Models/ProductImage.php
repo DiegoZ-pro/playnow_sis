@@ -4,24 +4,36 @@ namespace App\Models;
 
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
+use Illuminate\Support\Facades\Storage;
 
 class ProductImage extends Model
 {
     use HasFactory;
 
+    /**
+     * The attributes that are mass assignable.
+     *
+     * @var array<int, string>
+     */
     protected $fillable = [
         'product_id',
-        'image_path',
+        'image_url',
         'order',
         'is_primary',
     ];
 
+    /**
+     * The attributes that should be cast.
+     *
+     * @var array<string, string>
+     */
     protected $casts = [
+        'order' => 'integer',
         'is_primary' => 'boolean',
     ];
 
     /**
-     * Relación con producto
+     * Get the product that owns the image.
      */
     public function product()
     {
@@ -29,18 +41,33 @@ class ProductImage extends Model
     }
 
     /**
-     * Scope para ordenar imágenes
+     * Get the full URL of the image.
      */
-    public function scopeOrdered($query)
+    public function getFullUrlAttribute()
     {
-        return $query->orderBy('order');
+        return asset('storage/' . $this->image_url);
     }
 
     /**
-     * Obtener URL completa de la imagen
+     * Delete the image file from storage.
      */
-    public function getUrlAttribute(): string
+    public function deleteFile()
     {
-        return asset('storage/' . $this->image_path);
+        if (Storage::disk('public')->exists($this->image_url)) {
+            Storage::disk('public')->delete($this->image_url);
+        }
+    }
+
+    /**
+     * Boot method to handle model events.
+     */
+    protected static function boot()
+    {
+        parent::boot();
+
+        // Cuando se elimina la imagen, eliminar el archivo físico
+        static::deleting(function ($image) {
+            $image->deleteFile();
+        });
     }
 }

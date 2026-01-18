@@ -1,6 +1,6 @@
 <?php
 
-namespace App\Http\Controllers\Web;
+namespace App\Http\Controllers\Shop;
 
 use App\Http\Controllers\Controller;
 use App\Services\CartService;
@@ -16,28 +16,34 @@ class CartController extends Controller
     }
 
     /**
-     * Mostrar carrito
+     * Display cart page
      */
-    public function index()
+    public function index(Request $request)
     {
         $cart = $this->cartService->getCart();
-
-        return view('web.cart.index', compact('cart'));
+        
+        // Si es una petición AJAX, devolver JSON
+        if ($request->wantsJson() || $request->ajax()) {
+            return response()->json($cart);
+        }
+        
+        // Si no, devolver vista
+        return view('shop.cart.index', compact('cart'));
     }
 
     /**
-     * Agregar producto al carrito
+     * Add item to cart (AJAX)
      */
     public function add(Request $request)
     {
-        $request->validate([
-            'product_variant_id' => 'required|exists:product_variants,id',
-            'quantity' => 'required|integer|min:1',
-        ]);
-
         try {
+            $request->validate([
+                'variant_id' => 'required|exists:product_variants,id',
+                'quantity' => 'required|integer|min:1',
+            ]);
+
             $cart = $this->cartService->addItem(
-                $request->product_variant_id,
+                $request->variant_id,
                 $request->quantity
             );
 
@@ -50,42 +56,42 @@ class CartController extends Controller
             return response()->json([
                 'success' => false,
                 'message' => $e->getMessage(),
-            ], 422);
+            ], 400);
         }
     }
 
     /**
-     * Actualizar cantidad de item
+     * Update item quantity (AJAX)
      */
-    public function update(Request $request, $key)
+    public function update(Request $request, $cartId)
     {
-        $request->validate([
-            'quantity' => 'required|integer|min:0',
-        ]);
-
         try {
-            $cart = $this->cartService->updateItem($key, $request->quantity);
+            $request->validate([
+                'quantity' => 'required|integer|min:1',
+            ]);
+
+            $cart = $this->cartService->updateQuantity($cartId, $request->quantity);
 
             return response()->json([
                 'success' => true,
-                'message' => 'Carrito actualizado',
+                'message' => 'Cantidad actualizada',
                 'cart' => $cart,
             ]);
         } catch (\Exception $e) {
             return response()->json([
                 'success' => false,
                 'message' => $e->getMessage(),
-            ], 422);
+            ], 400);
         }
     }
 
     /**
-     * Eliminar item del carrito
+     * Remove item from cart (AJAX)
      */
-    public function remove($key)
+    public function remove($cartId)
     {
         try {
-            $cart = $this->cartService->removeItem($key);
+            $cart = $this->cartService->removeItem($cartId);
 
             return response()->json([
                 'success' => true,
@@ -96,31 +102,41 @@ class CartController extends Controller
             return response()->json([
                 'success' => false,
                 'message' => $e->getMessage(),
-            ], 422);
+            ], 400);
         }
     }
 
     /**
-     * Vaciar carrito
+     * Clear cart (AJAX)
      */
     public function clear()
     {
-        $this->cartService->clearCart();
+        try {
+            $cart = $this->cartService->clearCart();
 
-        return response()->json([
-            'success' => true,
-            'message' => 'Carrito vaciado',
-        ]);
+            return response()->json([
+                'success' => true,
+                'message' => 'Carrito vaciado',
+                'cart' => $cart,
+            ]);
+        } catch (\Exception $e) {
+            return response()->json([
+                'success' => false,
+                'message' => $e->getMessage(),
+            ], 400);
+        }
     }
 
     /**
-     * API: Obtener cantidad de items en carrito
+     * Get cart count (AJAX - for header badge)
      */
     public function count()
     {
+        $count = $this->cartService->getCartCount();
+        
         return response()->json([
             'success' => true,
-            'count' => $this->cartService->getItemsCount(),
+            'count' => $count,
         ]);
     }
 }
