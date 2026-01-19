@@ -116,8 +116,8 @@
                         Proceder al Pago
                     </a>
                 @else
-                    <a href="{{ route('shop.login') }}" 
-                       class="block w-full bg-red-600 hover:bg-red-700 text-white text-center px-6 py-3 rounded-lg font-bold mb-3">
+                    <a href="{{ route('shop.login', ['redirect' => route('shop.checkout.index')]) }}" 
+                        class="block w-full bg-red-600 hover:bg-red-700 text-white text-center px-6 py-3 rounded-lg font-bold mb-3">
                         <i class="fas fa-sign-in-alt mr-2"></i>
                         Iniciar Sesión para Comprar
                     </a>

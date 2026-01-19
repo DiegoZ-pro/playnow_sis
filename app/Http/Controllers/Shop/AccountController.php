@@ -39,7 +39,10 @@ class AccountController extends Controller
         if (Auth::guard('customer')->attempt($credentials, $remember)) {
             $request->session()->regenerate();
 
-            return redirect()->intended(route('shop.home'))
+            // ✅ SOLUCIÓN SIMPLE: Leer el parámetro redirect si existe
+            $redirectUrl = $request->query('redirect', route('shop.home'));
+            
+            return redirect($redirectUrl)
                 ->with('success', '¡Bienvenido de nuevo!');
         }
 
@@ -82,7 +85,10 @@ class AccountController extends Controller
         // Login automático después del registro
         Auth::guard('customer')->login($customer);
 
-        return redirect()->route('shop.home')
+        // ✅ Leer el parámetro redirect si existe
+        $redirectUrl = $request->query('redirect', route('shop.home'));
+        
+        return redirect($redirectUrl)
             ->with('success', '¡Cuenta creada exitosamente! Bienvenido a PLAY NOW.');
     }
 

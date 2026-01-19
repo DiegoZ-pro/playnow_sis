@@ -131,7 +131,7 @@
                                 <div class="w-16 h-16 bg-gray-100 rounded overflow-hidden flex-shrink-0">
                                     @if($item['image'])
                                     <img src="{{ asset('storage/' . $item['image']) }}" 
-                                         alt="{{ $item['name'] }}"
+                                         alt="{{ $item['product_name'] }}"
                                          class="w-full h-full object-cover">
                                     @else
                                     <div class="w-full h-full flex items-center justify-center">
@@ -140,7 +140,7 @@
                                     @endif
                                 </div>
                                 <div class="flex-1 min-w-0">
-                                    <p class="text-sm font-semibold text-gray-900 truncate">{{ $item['name'] }}</p>
+                                    <p class="text-sm font-semibold text-gray-900 truncate">{{ $item['product_name'] }}</p>
                                     <p class="text-xs text-gray-500">{{ $item['size'] }} / {{ $item['color'] }}</p>
                                     <p class="text-xs text-gray-500">Cantidad: {{ $item['quantity'] }}</p>
                                 </div>

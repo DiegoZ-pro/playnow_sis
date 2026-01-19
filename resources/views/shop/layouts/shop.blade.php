@@ -294,6 +294,11 @@
         // CSRF Token for AJAX
         const csrfToken = document.querySelector('meta[name="csrf-token"]').content;
 
+        // Make functions globally available
+        window.showAlert = showAlert;
+        window.updateCartCount = updateCartCount;
+        window.formatCurrency = formatCurrency;
+
         // Alert function
         function showAlert(message, type = 'success') {
             const alertContainer = document.getElementById('alert-container');
@@ -320,7 +325,7 @@
             }, 3000);
         }
 
-        // Update cart count
+        // ✅ CORREGIDO: Update cart count compatible con Alpine.js v3
         function updateCartCount() {
             fetch('/carrito/count', {
                 method: 'GET',
@@ -331,12 +336,21 @@
             .then(response => response.json())
             .then(data => {
                 if (data.success) {
-                    Alpine.store('cart', { count: data.count });
-                    // Update x-data cartCount
-                    document.body.__x.$data.cartCount = data.count;
+                    // Buscar el elemento body que tiene x-data con cartCount
+                    const bodyElement = document.querySelector('body[x-data]');
+                    if (bodyElement && bodyElement._x_dataStack) {
+                        // Alpine.js v3 usa _x_dataStack
+                        bodyElement._x_dataStack.forEach(stack => {
+                            if (stack.hasOwnProperty('cartCount')) {
+                                stack.cartCount = data.count;
+                            }
+                        });
+                    }
                 }
             })
-            .catch(error => console.error('Error updating cart count:', error));
+            .catch(error => {
+                console.error('Error updating cart count:', error);
+            });
         }
 
         // Format currency
